@@ -1,6 +1,7 @@
 # 🏡 Min-Max Normalization & PCA on Housing Data
 
-**Team:** Group ___ &nbsp;·&nbsp; **Members:** Sultan Akinola Atanda · John Buni · Eche Oji · Antonio Sainz
+**Team:** Group 1 &nbsp;·&nbsp; **Members:** Sultan Atanda · John Buni · Eche Oji · Antonio Sainz
+
 **Notebook:** [`MinMax_Normalization_Workshop.ipynb`](MinMax_Normalization_Workshop.ipynb) &nbsp;·&nbsp; **Data:** 2,000 houses, 6 numeric features
 
 > **The question we set out to answer:** when housing features live on completely different scales, what goes wrong, how does min-max normalization fix it, and once everything is on one scale, which features actually matter?

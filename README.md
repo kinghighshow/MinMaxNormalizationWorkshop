@@ -1,85 +1,143 @@
-# 🏠 Min-Max Normalization & PCA Workshop
+# 🏡 Min-Max Normalization & PCA on Housing Data
 
-## 📘 Workshop Overview
+**Team:** Group ___ &nbsp;·&nbsp; **Members:** Sultan Akinola Atanda · John Buni · Eche Oji · Antonio Sainz
+**Notebook:** [`MinMax_Normalization_Workshop.ipynb`](MinMax_Normalization_Workshop.ipynb) &nbsp;·&nbsp; **Data:** 2,000 houses, 6 numeric features
 
-This workshop introduces students to two foundational techniques in Machine Learning preprocessing and dimensionality reduction:
-
-- **Min-Max Normalization**
-- **Principal Component Analysis (PCA)**
-
-Using a real-world **housing dataset**, students will first normalize all numerical features to ensure fair comparison and proper scaling. They will then extend their analysis by applying PCA to identify the most important underlying structure in the data.
-
-This workshop is designed for active learning, collaborative coding, and reflective thinking.
+> **The question we set out to answer:** when housing features live on completely different scales, what goes wrong, how does min-max normalization fix it, and once everything is on one scale, which features actually matter?
 
 ---
 
-## 🧠 Topics Covered
+## ⏱️ Presentation Run Sheet (5 minutes)
 
-### 1️⃣ Min-Max Normalization
-- Linear feature scaling
-- Implementation from scratch
-- Handling edge cases (e.g., constant columns)
-- Why normalization matters for ML algorithms (KNN, regression, neural networks)
-
-### 2️⃣ Principal Component Analysis (PCA)
-- Variance maximization
-- Eigenvectors and eigenvalues (conceptual level)
-- Dimensionality reduction
-- Interpreting principal components
-- Relating principal components to a target variable
+| Section | Presenter |
+|---|---|
+| [1. Goal, data and workflow](#1-goal-data-and-workflow) | Sultan |
+| [2. The problem and the fix: min-max normalization](#2-the-problem-and-the-fix-min-max-normalization) | John |
+| [3. Covariance and how PCA works](#3-covariance-and-how-pca-works) | Eche |
+| [4. PCA results](#4-pca-results) | Antonio |
+| [5. Feature importance, impact and conclusions](#5-feature-importance-impact-and-conclusions) | Sultan |
 
 ---
 
-## 🎯 Expected Learning Outcomes
+## 1. Goal, data and workflow
 
-By the end of this workshop, students should be able to:
+![Workflow](images/00_workflow.png)
 
-- Implement Min-Max normalization across all numerical features of a dataset.
-- Explain why feature scaling is necessary before applying PCA.
-- Apply PCA to a normalized housing dataset.
-- Determine how many principal components explain ≥ 90% of the variance.
-- Interpret feature loadings and relate principal components to a target variable.
-- Critically evaluate code implementation through structured “talking points.”
+- **Data:** 2,000 houses with `Price`, `Area_sqft`, `Num_Bedrooms`, `Num_Bathrooms`, `Year_Built`, `Lot_Size`. No missing values, no duplicates.
+- **Step 1:** implement min-max normalization by hand (no numpy or sklearn), then check it against sklearn — the largest difference is **2 × 10⁻¹⁵**.
+- **Challenge:** run PCA on the normalized features, then test whether the components relate to `Price`.
+- **Extra:** covariance analysis and a feature-impact model with confidence intervals.
 
 ---
 
-## 🧩 Summary of Activity
+## 2. The problem and the fix: min-max normalization
 
-### Step 1: Normalize the Housing Dataset
-Students implement Min-Max normalization manually on all relevant numerical features.
+![Scale gap](images/01_scale_gap.png)
 
-### Step 2: Explore Principal Components
-Students apply PCA to the normalized feature matrix to:
-- Identify major variance directions
-- Determine cumulative explained variance
-- Analyze feature loadings
-- Examine correlation between principal components and the target variable
+**The problem.** Price spans about **978,000** units while bathrooms span **2**. Any algorithm that adds up distances or weighted sums will listen to the big numbers and ignore the small ones.
 
-### Step 3: Reflection & Talking Points
-Students document three “talking points” discussing:
-- Implementation decisions
-- Efficiency or logic considerations
-- Interpretation of PCA results
+![KNN distance share](images/02_knn_distance_share.png)
 
----
+- On raw data, **Price is 99.98%** of the KNN distance between two houses. A "nearest neighbour" is just the house with the closest price.
+- In gradient descent the update for each weight scales with its input, so Price-scale weights move about **100,000× faster** than bathroom weights. One learning rate cannot fit both.
 
-## 📂 Repository Contents
+**The fix.**
 
-- `MinMax_Normalization_Workshop_vNext_PCA.ipynb`
-- `housing_data.csv`
-- `README.md` (this file)
+![Min-max concept](images/09_minmax_concept.png)
 
----
+$$x_{\text{norm}} = \frac{x - x_{\min}}{x_{\max} - x_{\min}}$$
 
-## 🚀 Why This Matters
+| Feature (house H100000) | Raw | Min | Max | Normalized |
+|---|---:|---:|---:|---:|
+| Price | 574,507 | 100,000 | 1,077,909 | **0.485** |
+| Num_Bedrooms | 3 | 1 | 5 | **0.500** |
+| Num_Bathrooms | 3 | 1 | 3 | **1.000** |
+| Year_Built | 2002 | 1950 | 2022 | **0.722** |
+| Lot_Size | 4,878 | 1,000 | 13,088 | **0.321** |
 
-Feature scaling and dimensionality reduction are critical skills in modern Machine Learning workflows. Understanding both the mechanics and interpretation of these techniques prepares students for:
-
-- Model optimization
-- Feature engineering
-- Data preprocessing pipelines
-- Real-world ML deployment challenges
+**What we learned:**
+- Min-max equalizes **range, not influence.** After scaling, bathrooms (36%) and bedrooms (28%) carry the most KNN distance, because their few values sit at 0, 0.5 and 1.
+- It is **sensitive to outliers:** the single most expensive house sets the top of the Price scale for everyone.
+- In production, fit min and max on **training data only** and reuse them for new houses.
 
 ---
 
+## 3. Covariance and how PCA works
 
+![Covariance views](images/03_covariance_views.png)
+
+- **Raw covariance** is one bright square: Price's variance (≈ 2.2 × 10¹⁰) hides everything else.
+- **After min-max** the diagonal shows each feature's spread inside [0, 1]. Bathrooms (0.17) and bedrooms (0.12) are widest; area and lot size (≈ 0.02) are narrow.
+- **Correlation** confirms the features barely move together: the strongest pair is bedrooms ↔ year built at **r = 0.036**.
+- In the notebook this chart is **interactive**: a dropdown switches between the three views, and a filter (features + minimum |r|) hides weak pairs.
+
+![PCA concept](images/10_pca_concept.png)
+
+We followed the course method step by step: **covariance matrix → eigen-decomposition (`np.linalg.eigh`) → sort by eigenvalue → project the data.** Our manual results match sklearn's `PCA` to within **10⁻¹⁶**.
+
+---
+
+## 4. PCA results
+
+![Scree plot](images/04_scree.png)
+
+**Q1. How many PCs explain ≥ 90% of the variance? → Four.** The first three reach only 88.4%; PC4 brings it to 94.9%.
+
+![Scaling comparison](images/05_scaling_comparison.png)
+
+**Why normalize before PCA:** on raw units PC1 claims **94.1%** of the variance, but that is only `Lot_Size`'s large numbers. After min-max we need 4 PCs, and after z-scoring all 5.
+
+![Loadings](images/06_loadings.png)
+
+**Q2. What drives PC1 and PC2?** PC1 ≈ **Num_Bathrooms** (loading 0.999). PC2 ≈ **Num_Bedrooms** (0.993).
+
+**Q4. What does PC1 mean?** "How many bathrooms the house has" — *not* a general house-size factor, because area, lot size and room counts do not move together in this data. With nearly independent features, PCA has nothing to merge, so each PC is basically one original feature.
+
+---
+
+## 5. Feature importance, impact and conclusions
+
+![PC correlation and importance](images/07_pc_price_and_importance.png)
+
+**Q3. Which PC is most correlated with Price? → PC3** (≈ `Year_Built`), at only **r = −0.032**. The components with the most variance (PC1, PC2) are *not* the ones most related to Price.
+
+![Price impact](images/08_price_impact.png)
+
+- Because each feature runs 0 → 1 after min-max, a regression coefficient reads as **"the price change from the lowest to the highest value."**
+- The largest estimates are area (−$18k) and year built (−$16.5k), but **every 95% bootstrap interval crosses $0** and **R² = 0.0018**.
+- Conclusion: in this dataset, size, rooms and age do not reliably explain price. A real model would need other information such as location or condition.
+
+### 🎯 Key takeaways
+
+1. **Scale first.** Without normalization, KNN, gradient descent and PCA all follow the feature with the biggest units.
+2. **Min-max fixes range, not everything.** It keeps the shape of each feature and is sensitive to outliers.
+3. **PCA only compresses correlated features.** Ours are almost independent, so 4 of 5 components are needed for 90%.
+4. **Variance ≠ relevance.** PCA is unsupervised; whether a component matters for Price has to be tested separately.
+
+---
+
+## 🗂️ Repository Structure
+
+```
+├── MinMax_Normalization_Workshop.ipynb   completed team notebook
+├── data/housing_data.csv                 dataset
+├── src/
+│   ├── normalizer.py                     MinMaxNormalizer (pure Python)
+│   ├── pca_analyzer.py                   PCAAnalyzer (covariance → eigen → PCs)
+│   ├── feature_insights.py               FeatureInsights (covariance filter, KNN share, price impact)
+│   └── visualizer.py                     HousingVisualizer (interactive Plotly charts)
+├── images/                               figures used in this README
+└── requirements.txt
+```
+
+## ▶️ How to Run
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate          # macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Open the notebook and choose **Run All**. All charts are interactive Plotly figures; the covariance explorer uses `ipywidgets`. The last code cell can export the charts to `images/` if `kaleido` is working on your machine.
+
+**Tools:** Python 3.12 · pandas · NumPy · scikit-learn · Plotly · ipywidgets

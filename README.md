@@ -1,14 +1,13 @@
 # 🏡 Min-Max Normalization & PCA on Housing Data
 
 **Team:** Group 1 &nbsp;·&nbsp; **Members:** Sultan Atanda · John Buni · Eche Oji · Antonio Sainz
-
 **Notebook:** [`MinMax_Normalization_Workshop.ipynb`](MinMax_Normalization_Workshop.ipynb) &nbsp;·&nbsp; **Data:** 2,000 houses, 6 numeric features
 
 > **The question we set out to answer:** when housing features live on completely different scales, what goes wrong, how does min-max normalization fix it, and once everything is on one scale, which features actually matter?
 
 ---
 
-## ⏱️ Presentation Run Sheet (5 minutes)
+## 🎤 Presentation Run Sheet
 
 | Section | Presenter |
 |---|---|
@@ -17,6 +16,7 @@
 | [3. Covariance and how PCA works](#3-covariance-and-how-pca-works) | Eche |
 | [4. PCA results](#4-pca-results) | Antonio |
 | [5. Feature importance, impact and conclusions](#5-feature-importance-impact-and-conclusions) | Sultan |
+| [Insights summary](#-insights-summary-in-notebook-order) | Sultan |
 
 ---
 
@@ -108,12 +108,26 @@ We followed the course method step by step: **covariance matrix → eigen-decomp
 - The largest estimates are area (−$18k) and year built (−$16.5k), but **every 95% bootstrap interval crosses $0** and **R² = 0.0018**.
 - Conclusion: in this dataset, size, rooms and age do not reliably explain price. A real model would need other information such as location or condition.
 
-### 🎯 Key takeaways
+---
 
-1. **Scale first.** Without normalization, KNN, gradient descent and PCA all follow the feature with the biggest units.
-2. **Min-max fixes range, not everything.** It keeps the shape of each feature and is sensitive to outliers.
-3. **PCA only compresses correlated features.** Ours are almost independent, so 4 of 5 components are needed for 90%.
-4. **Variance ≠ relevance.** PCA is unsupervised; whether a component matters for Price has to be tested separately.
+## 📝 Insights Summary (in notebook order)
+
+**Talking Points #1: Why normalization matters**
+1. **KNN:** on raw data, Price is 99.98% of the distance, so neighbours are chosen by price alone. After scaling, every feature counts.
+2. **Gradient descent:** big inputs like Price get much bigger updates than small ones like bathrooms. With all features on 0–1, training is even and stable.
+3. **Housing features:** Price spans ~978,000 and bathrooms only 2. Min-max puts them on one scale, but outliers set the top of that scale.
+
+**Challenge Deliverable: PCA answers**
+1. **PCs for ≥ 90% variance:** 4 (three PCs reach only 88.4%).
+2. **Top contributors:** PC1 = bathrooms, PC2 = bedrooms.
+3. **PC most related to Price:** PC3 (mostly Year_Built), but the link is tiny (r = −0.032).
+4. **What PC1 represents:** "number of bathrooms." The features don't move together, so each PC is mostly one feature.
+- **Do the biggest PCs relate most to Price?** No. They hold the most variance but have almost no link to Price.
+
+**Talking Points #2: What PCA, covariance and feature impact taught us**
+1. **Scale before PCA:** on raw data PC1 seems to explain 94%, only because of Lot_Size's big numbers.
+2. **PCA needs related features:** ours are almost unrelated (max r = 0.036), so PCA can't combine them.
+3. **More variance ≠ more important:** the top PCs barely relate to Price, and no feature reliably predicts it (R² = 0.0018).
 
 ---
 
@@ -139,6 +153,6 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-Open the notebook and choose **Run All**. All charts are interactive Plotly figures; the covariance explorer uses `ipywidgets`. The last code cell can export the charts to `images/` if `kaleido` is working on your machine.
+Open the notebook and choose **Run All**. All charts are interactive Plotly figures; the covariance explorer uses `ipywidgets`. The cells follow the same order as the professor's notebook: Step 1 → Talking Points #1 → PCA Steps A–F → Challenge Deliverable → Talking Points #2.
 
 **Tools:** Python 3.12 · pandas · NumPy · scikit-learn · Plotly · ipywidgets

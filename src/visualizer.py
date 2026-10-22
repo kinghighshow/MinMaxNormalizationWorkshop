@@ -102,7 +102,7 @@ class HousingVisualizer:
             yaxis=dict(autorange="reversed"), xaxis=dict(side="bottom"),
         )
         note = f"Cells with |r| below {min_abs} hidden" if min_abs > 0 else "Use the menu to switch between raw, normalized and correlation"
-        return self._finish(fig, "How the features move together", note, height=560)
+        return self._finish(fig, "How the features move together", note, height=660)
 
     def covariance_explorer(self, insights):
         import ipywidgets as widgets
